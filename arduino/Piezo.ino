@@ -1,16 +1,25 @@
+#include <SoftwareSerial.h>
+
 #define SENSOR_PIN A1
 #define LED_PIN 13
 
-// 임계값(히스테리시스): 상승 교차 횟수로 주파수를 계산한다
+// HC-06 연결
+// HC-06 TXD → Arduino D10
+// HC-06 RXD ← Arduino D11
+SoftwareSerial BTSerial(10, 11);
+
 #define THRESHOLD_HIGH 550
 #define THRESHOLD_LOW 450
-
-// 측정 창(ms) — 창마다 freqHz 한 줄을 출력한다
 #define WINDOW_MS 1000UL
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(115200);   // USB 디버깅용
+  BTSerial.begin(9600);   // HC-06 기본 속도
+
   pinMode(LED_PIN, OUTPUT);
+
+  Serial.println("freqHz");
+  BTSerial.println("freqHz");
 }
 
 void loop() {
@@ -33,6 +42,9 @@ void loop() {
 
   float freqHz = crossings * 1000.0 / WINDOW_MS;
 
-  // 게이트웨이(publish_sensor.py)가 이 값을 freqHz로 읽는다
+  // USB로 출력
   Serial.println(freqHz, 1);
+
+  // HC-06 블루투스로 출력
+  BTSerial.println(freqHz, 1);
 }

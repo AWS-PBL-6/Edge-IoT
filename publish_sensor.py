@@ -46,11 +46,10 @@ def build_event(freq_hz, occurred_at):
             "deviceId": SENSOR_ID,
         },
         "payload": {
-            "siteId": SITE_ID,
-            "berthId": BERTH_ID,
-            "lineId": LINE_ID,
-            "freqHz": freq_hz,
+            "freqHz": freq_hz
         },
+        "topicSensorId": SENSOR_ID
+
     }
 
 
