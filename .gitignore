@@ -1,1 +1,29 @@
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# VS Code
+.vscode/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+
+# Arduino / build artifacts
+build/
+*.bin
+*.elf
+*.hex
+*.eep
+*.map
+*.lss
+
+# Sensitive or local certificate files
+certs/
