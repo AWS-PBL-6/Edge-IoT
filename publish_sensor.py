@@ -1,5 +1,7 @@
 import json
+import os
 import time
+import uuid
 from datetime import datetime, timezone
 
 import serial
@@ -11,18 +13,50 @@ SERIAL_PORT = "COM8"
 SERIAL_BAUD = 9600
 
 AWS_IOT_ENDPOINT = "a1ufy9lg12m67z-ats.iot.ap-northeast-2.amazonaws.com"
-CLIENT_ID = "factorypulse_gateway_01"
+
+# topic의 {sensorId} = source.deviceId = 관리 화면에서 lineId에 배정한 sensorId
+SENSOR_ID = "factorypulse_gateway_01"
+CLIENT_ID = SENSOR_ID
+
 
 PATH_TO_CERT = "certs/device.pem.crt"
 PATH_TO_KEY = "certs/private.pem.key"
 PATH_TO_ROOT_CA = "certs/AmazonRootCA1.pem"
 
-TOPIC = "factorypulse/sensor/uno_01"
+# aesentinel/{sensorId}/piezo — IoT Rule이 이 topic을 구독해 Lambda를 호출한다
+TOPIC = f"aesentinel/{SENSOR_ID}/piezo"
 
-import os
+
+def utc_now_iso():
+    return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+
+
+def build_event(freq_hz, occurred_at):
+    # topicSensorId는 보내지 않는다. IoT Rule이 topic에서 읽어 추가한다.
+    return {
+        "schemaVersion": "1.0.0",
+        "eventType": "piezo.frequency.detected",
+        "eventId": f"evt-{uuid.uuid4()}",
+        "traceId": f"trc-{uuid.uuid4()}",
+        "occurredAt": occurred_at,
+        "sentAt": utc_now_iso(),
+        "source": {
+            "account": "iot",
+            "service": "esp32-piezo",
+            "deviceId": SENSOR_ID,
+        },
+        "payload": {
+            "siteId": SITE_ID,
+            "berthId": BERTH_ID,
+            "lineId": LINE_ID,
+            "freqHz": freq_hz,
+        },
+    }
+
 
 print("ENDPOINT:", AWS_IOT_ENDPOINT)
 print("CLIENT_ID:", CLIENT_ID)
+print("TOPIC:", TOPIC)
 print("CERT EXISTS:", os.path.exists(PATH_TO_CERT), PATH_TO_CERT)
 print("KEY EXISTS:", os.path.exists(PATH_TO_KEY), PATH_TO_KEY)
 print("ROOT CA EXISTS:", os.path.exists(PATH_TO_ROOT_CA), PATH_TO_ROOT_CA)
@@ -54,41 +88,29 @@ try:
             continue
 
         # Arduino output example:
-        # 1200,532
-        if "," not in line:
+        # 28.5
+        try:
+            freq_hz = float(line)
+        except ValueError:
             print("Skip:", line)
             continue
 
-        parts = line.split(",")
+        occurred_at = utc_now_iso()
 
-        if len(parts) != 2:
-            print("Invalid:", line)
+        # freqHz는 0보다 큰 값만 전송한다
+        if freq_hz <= 0:
+            print("Skip non-positive freqHz:", freq_hz)
             continue
 
-        try:
-            time_ms = int(parts[0])
-            ae_value = int(parts[1])
-        except ValueError:
-            print("Header or invalid line:", line)
-            continue
-
-        payload = {
-            "device_id": "uno_01",
-            "machine_id": "MOTOR_01",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "time_ms": time_ms,
-            "ae_value": ae_value,
-            "peak_value": ae_value,
-            "event_count": 1 if ae_value > 700 else 0
-        }
+        event = build_event(freq_hz, occurred_at)
 
         mqtt_connection.publish(
             topic=TOPIC,
-            payload=json.dumps(payload),
+            payload=json.dumps(event),
             qos=mqtt.QoS.AT_LEAST_ONCE
         )[0].result()
 
-        print("Published:", payload)
+        print("Published:", event)
 
 except KeyboardInterrupt:
     print("Stopped by user.")
