@@ -5,10 +5,11 @@
 ## 발행 원칙
 
 - topic: `aesentinel/{sensorId}/piezo`
-- payload: [`iot-piezo-frequency-event.v1.json`](https://github.com/AWS-PBL-6/docs/blob/main/packages/contracts/examples/iot-piezo-frequency-event.v1.json)
+- payload: [`iot-piezo-frequency-event.v2.json`](https://github.com/AWS-PBL-6/docs/blob/main/packages/contracts/examples/iot-piezo-frequency-event.v2.json)
 - `source.deviceId`: topic의 `{sensorId}`와 동일
-- `payload.lineId`: Backend에서 그 센서에 배정한 계류삭과 동일
+- `lineId`·`siteId`·`berthId`: 전송하지 않음(Backend가 현재 센서 배정에서 조회)
 - 측정값: `freqHz > 0`; 위험도·장력 추정치는 보내지 않음
+- heartbeat: `aesentinel/{sensorId}/heartbeat`에 30초마다 발행; MQTT clientId는 sensorId와 동일
 
-정상 시나리오 외에 중복 센서 배정, 잘못된 `lineId`, PENDING 라인 이벤트도 테스트해
-각각 `SENSOR_IN_USE`, `SENSOR_LINE_MISMATCH`, `LINE_SENSOR_NOT_BOUND`가 발생하는지 확인한다.
+정상 시나리오 외에 중복 센서 배정, 미배정 센서, topic/body 센서 ID 불일치도 테스트해
+각각 `SENSOR_IN_USE`, `SENSOR_NOT_BOUND`, `VALIDATION_ERROR`가 발생하는지 확인한다.
