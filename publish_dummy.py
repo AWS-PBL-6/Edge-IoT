@@ -8,7 +8,7 @@ from awscrt import mqtt
 from awsiot import mqtt_connection_builder
 
 
-AWS_IOT_ENDPOINT = "a1ufy9lg12m67z-ats.iot.ap-northeast-2.amazonaws.com"
+AWS_IOT_ENDPOINT = "a1jo5mo5y43cwq-ats.iot.ap-northeast-2.amazonaws.com"
 
 # topic의 {sensorId} = source.deviceId = 관리 화면에서 lineId에 배정한 sensorId
 SENSOR_ID = "factorypulse_gateway_01"
